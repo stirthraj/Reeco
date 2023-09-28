@@ -3,10 +3,35 @@ import "./App.css";
 import Counter from "./features/counter/Counter";
 import Avcado from "../src/assets/Avocado Hass.jpg";
 import { Cart } from "./utils/cartItem";
+import { useState } from "react";
 
 // #1e633f ,black,white
 
 function App() {
+  const [edit, setEdit] = useState({
+    visible: "hidden",
+    opacity: 0,
+    index: null,
+    value: "",
+  });
+  const [item, setItem] = useState({
+    visible: "hidden",
+    opacity: 0,
+    index: null,
+    value: "",
+  });
+  const [state, setState] = useState([
+    {
+      src: false,
+      name: "Product name",
+      brand: "Brand",
+      price: "Price",
+      quantity: "Quantity",
+      total: "Total",
+      status: "Status",
+    },
+    ...Cart,
+  ]);
   return (
     <Container>
       <Header>
@@ -98,21 +123,12 @@ function App() {
 
             <ButtonPair>
               <PrimaryButton>Add Item</PrimaryButton>
-              <PrimaryButton>Print</PrimaryButton>
+              <div>
+                <i class="fa fa-print"></i>
+              </div>
             </ButtonPair>
           </SearchBar>
-          {[
-            {
-              src: false,
-              name: "Product name",
-              brand: "Brand",
-              price: "Price",
-              quantity: "Quantity",
-              total: "Total",
-              status: "Status",
-            },
-            ...Cart,
-          ].map((ele, j) => (
+          {state.map((ele, j) => (
             <Row key={j}>
               <Col flex={1}>
                 {ele.src && (
@@ -124,15 +140,51 @@ function App() {
               <Col>{ele.price}</Col>
               <Col>{ele.quantity}</Col>
               <Col>{ele.total}</Col>
-              <Col>{ele.department}</Col>
               <ActionCol flex={6}>
                 {ele.status ? (
                   ele.status
                 ) : (
                   <>
-                    <div>&#x2713;</div>
-                    <div>&#x2717;</div>
-                    <div>Edit</div>
+                    {ele.statusText === "Approved" ? (
+                      <SecondaryButton>{ele.statusText}</SecondaryButton>
+                    ) : ele.statusText === "Missing" ||
+                      ele.statusText === "Missing-Urgent" ? (
+                      <DangerButton>{ele.statusText}</DangerButton>
+                    ) : null}
+
+                    <div
+                      onClick={() => {
+                        let deepCopy = JSON.parse(JSON.stringify(state));
+                        deepCopy[j].statusText = "Approved";
+                        setState([...deepCopy]);
+                      }}
+                    >
+                      &#x2713;
+                    </div>
+                    <div
+                      onClick={() => {
+                        setEdit({
+                          ...edit,
+                          visible: "visible",
+                          opacity: 1,
+                          index: j,
+                        });
+                      }}
+                    >
+                      &#x2717;
+                    </div>
+                    <div
+                      onClick={() => {
+                        setItem({
+                          ...item,
+                          visible: "visible",
+                          opacity: 1,
+                          index: j,
+                        });
+                      }}
+                    >
+                      Edit
+                    </div>
                   </>
                 )}
               </ActionCol>
@@ -140,11 +192,190 @@ function App() {
           ))}
         </Table>
       </Main>
+      <PopupContainer visible={edit.visible} opacity={edit.opacity}>
+        <Popup
+          edit={edit}
+          setEdit={setEdit}
+          state={state}
+          setState={setState}
+        />
+      </PopupContainer>
+      <PopupContainer visible={item.visible} opacity={item.opacity}>
+        <EditPopup
+          item={item}
+          setItem={setItem}
+          state={state}
+          setState={setState}
+        />
+      </PopupContainer>
     </Container>
   );
 }
 
 export default App;
+
+export const EditPopup = ({ item, setItem, state, setState }) => (
+  <div
+    style={{
+      textAlign: "center",
+      color: "black",
+      margin: "10% auto",
+      padding: "20px",
+      background: "#fff",
+      borderRadius: "5px",
+      width: "34%",
+      position: "relative",
+      transition: "all 5s ease-in-out",
+    }}
+  >
+    <FlexBetween>
+      <Bold>
+        {state[item["index"]]?.name + "  " + state[item["index"]]?.brand}
+      </Bold>
+      <SecondaryButton onClick={() => setItem({ ...item, visible: "hidden", opacity: 0 })}>
+        X
+      </SecondaryButton>
+    </FlexBetween>
+    <div
+      style={{
+        display: "flex",
+      }}
+    >
+      <Col flex={1}>
+        <img src={Avcado} height={60} width={60} alt="avcado" />
+      </Col>
+      <Col flex={3}>
+        <FlexBetween>
+          <div>Price:</div>
+          <div>{state[item["index"]]?.price}</div>
+        </FlexBetween>
+        <FlexBetween>
+          <div>Quantity:</div>
+
+          <div>
+            <SecondaryButton
+              onClick={() => {
+                let deepCopy = JSON.parse(JSON.stringify(state));
+                deepCopy[item["index"]].quantity =
+                  deepCopy[item["index"]].quantity - 1;
+                deepCopy[item["index"]].total =
+                  deepCopy[item["index"]].quantity *
+                  deepCopy[item["index"]].price;
+                setState([...deepCopy]);
+              }}
+            >
+              -
+            </SecondaryButton>
+            {state[item["index"]]?.quantity}
+            <SecondaryButton
+              onClick={() => {
+                let deepCopy = JSON.parse(JSON.stringify(state));
+                deepCopy[item["index"]].quantity =
+                  deepCopy[item["index"]].quantity + 1;
+                deepCopy[item["index"]].total =
+                  deepCopy[item["index"]].quantity *
+                  deepCopy[item["index"]].price;
+                setState([...deepCopy]);
+              }}
+            >
+              +
+            </SecondaryButton>
+          </div>
+        </FlexBetween>
+        <FlexBetween>
+          <div>Total:</div>
+          <div>{state[item["index"]]?.total}</div>
+        </FlexBetween>
+      </Col>
+    </div>
+    <FlexBetween>
+      <Bold>
+        Choose Reason: (Optional)
+      </Bold>
+      <div>
+        {["Missing Product","Quantity is not same","Price is not same","Other"].map((el,k)=>{return state[item["index"]]?.reason===el?<SecondaryButton key={k}  onClick={() => {
+                let deepCopy = JSON.parse(JSON.stringify(state));
+                deepCopy[item["index"]].reason =el;
+                setState([...deepCopy]);
+              }}>{el}</SecondaryButton>:<PrimaryButton key={k}  onClick={() => {
+                let deepCopy = JSON.parse(JSON.stringify(state));
+                deepCopy[item["index"]].reason =el;
+                setState([...deepCopy]);
+              }}>{el}</PrimaryButton>})}
+      </div>
+    </FlexBetween>
+    <FlexEnd>
+      {/* <div
+        onClick={() => {
+        }}
+      >
+        Cancel
+      </div> */}
+      <SecondaryButton
+     onClick={() => setItem({ ...item, visible: "hidden", opacity: 0 })}
+      >
+        Send
+      </SecondaryButton>
+    </FlexEnd>
+  </div>
+);
+export const Popup = ({ edit, setEdit, state, setState }) => (
+  <div
+    style={{
+      textAlign: "center",
+      color: "black",
+      margin: "30% auto",
+      padding: "20px",
+      background: "#fff",
+      borderRadius: "5px",
+      width: "30%",
+      position: "relative",
+      transition: "all 5s ease-in-out",
+    }}
+  >
+    <FlexBetween>
+      <Bold>Missing Product</Bold>
+      <div onClick={() => setEdit({ ...edit, visible: "hidden", opacity: 0 })}>
+        X
+      </div>
+    </FlexBetween>
+    <div>Is {state[edit["index"]]?.name} urgent?</div>
+    <FlexEnd>
+      <div
+        onClick={() => {
+          let deepCopy = JSON.parse(JSON.stringify(state));
+          deepCopy[edit["index"]].statusText = "Missing";
+          setState([...deepCopy]);
+          setEdit({ ...edit, visible: "hidden", opacity: 0 });
+        }}
+      >
+        No
+      </div>
+      <div
+        onClick={() => {
+          let deepCopy = JSON.parse(JSON.stringify(state));
+          deepCopy[edit["index"]].statusText = "Missing-Urgent";
+          setState([...deepCopy]);
+          setEdit({ ...edit, visible: "hidden", opacity: 0 });
+        }}
+      >
+        Yes
+      </div>
+    </FlexEnd>
+  </div>
+);
+
+const PopupContainer = styled.div`
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  transition: opacity 500ms;
+  visibility: ${(props) => props.visible || "hidden"};
+  opacity: ${(props) => props.opacity || 0};
+`;
 
 const Container = styled.div`
   margin: 0px;
@@ -208,6 +439,8 @@ const PrimaryButton = styled.button`
   border-radius: 4rem;
   padding: 8px 16px;
   color: #1e633f;
+  height: 36px;
+  margin:4px 1px;
 `;
 const SecondaryButton = styled.button`
   border: 1px solid #1e633f;
@@ -215,6 +448,16 @@ const SecondaryButton = styled.button`
   padding: 8px 16px;
   background-color: #1e633f;
   color: white;
+  height: 36px;
+  margin:0 0.4rem;
+`;
+const DangerButton = styled.button`
+  border: 1px solid #1e633f;
+  border-radius: 4rem;
+  padding: 8px 16px;
+  background-color: red;
+  color: white;
+  height: 36px;
 `;
 
 const Main = styled.div`
@@ -250,6 +493,7 @@ const Search = styled.input`
 
 const ButtonPair = styled.div`
   display: flex;
+  align-items: center;
   column-gap: 1.4rem;
 `;
 
@@ -275,16 +519,32 @@ const Col = styled.div`
   text-align: left;
 `;
 
-const Button = styled.button`
-  text-align: center;
-`;
 const ActionCol = styled.div`
   flex: ${(props) => props.flex || 3};
   display: flex;
+  justify-content: flex-end;
   column-gap: 1rem;
 `;
 const Row = styled.div`
   display: flex;
   justify-content: space-evenly;
+  align-items: center;
   margin: 1rem;
+`;
+
+const FlexBetween = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin:1rem 0;
+`;
+
+const FlexEnd = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  column-gap: 1rem;
+  font-weight: bold;
+`;
+
+const Bold = styled.div`
+  font-weight: bold;
 `;
