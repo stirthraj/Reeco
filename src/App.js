@@ -1,6 +1,5 @@
 import styled from "styled-components";
 import "./App.css";
-import Counter from "./features/counter/Counter";
 import Avcado from "../src/assets/Avocado Hass.jpg";
 import { Cart } from "./utils/cartItem";
 import { useState } from "react";
